@@ -1,16 +1,23 @@
+import re
+re_clean_punctuations = re.compile('[^\w\s]')
+
 def popular_n_words(how_many_top_words, possible_words, phrases):
                          
-    requests_array = [set()]
+    requests_array = []
     score = dict()
     
+    possible_words_set = set(possible_words)
     for phrase in phrases:
-        requests_array.append(set(normalizeString(phrase).split()) & set(possible_words))
+        intersect_result = set(normalizeString(phrase).split()).intersection(possible_words_set)
+        if len(intersect_result) > 0:
+            requests_array.append(intersect_result)
         
     heap = MaxHeap()
     for words in requests_array:
         for word in words:
-            if word in score:
-                score[word].increase_count()
+            temp_score = score.get(word)
+            if temp_score != None:
+                temp_score.increase_count()
             else:
                 score[word] = Node(word, heap.recalculate_node)
                 heap.push(score[word])
@@ -23,7 +30,7 @@ def popular_n_words(how_many_top_words, possible_words, phrases):
     return result
 
 def normalizeString(input):
-    return input.casefold()
+    return re_clean_punctuations.sub('', input.casefold())
     
 class Node:
     def __init__(self, word, when_increase):
@@ -83,16 +90,16 @@ class MaxHeap:
         current_index = 0
         while(heap_length > 1 and current_index < heap_length - 1):
             right_index = (current_index * 2) + 2
-            if right_index in self.heap and self.heap[right_index].is_more_than(self.heap[current_index]):
+            if right_index < heap_length and self.heap[right_index].is_more_than(self.heap[current_index]):
                 self.heap[right_index], self.heap[current_index] = self.heap[current_index], self.heap[right_index]
                 self.heap[current_index].index = right_index
                 current_index = right_index
                 continue
 
             left_index = (current_index * 2) + 1
-            if left_index in self.heap and self.heap[left_index].is_more_than(self.heap[current_index]):
+            if left_index < heap_length and self.heap[left_index].is_more_than(self.heap[current_index]):
                 self.heap[left_index], self.heap[current_index] = self.heap[current_index], self.heap[left_index]
-                self.heap[current_index] = left_index
+                self.heap[current_index].index = left_index
                 current_index = left_index
                 continue
 
@@ -120,10 +127,12 @@ result = popular_n_words(2,
         "I want to eat a fruit", 
         "Test your code", 
         "Ordering food online is a trend",
-        "Why should I test this?"
-        "What are you testing?"
+        "Why should I test this fruit?",
+        "What are you testing?",
+        "Can I order some food?",
+        "Is test important?"
     ]
 )
 
-print("Expected: ['test', 'fruit']")
-print(result)
+print("Expected: ['test', 'food']")
+print("Result: ", result)
